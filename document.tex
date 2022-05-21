@@ -124,11 +124,44 @@ that ``well-typed programs do not get stuck'', and preservation states that
 ``a program has the same type after each evaluation step''. The latter seems
 promising for an equational approach, as it is a statement \emph{equating} two
 things -- namely, the type of an expression before and after being stepped.
-Preservation, then, can be represented by the following simple equation:
+
+We specify the target language by converting its typing judgment $\Gamma
+\vdash e : \tau$ into an Agda function
 
 \begin{equation}
-  \texttt{typeof}\ \texttt{e} = \texttt{typeof} (\texttt{step}\ \texttt{e})
+  \texttt{typeof} : \texttt{Exp} \rightarrow \texttt{Maybe Type}
 \end{equation}
+
+with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
+
+We next amend the type of \texttt{step} to take a witness that its argument
+is well-typed, which will be useful later:
+
+\begin{equation}
+  \texttt{step} : (e: \texttt{Exp}) \rightarrow (\emptyset \vdash e : \tau)
+    \rightarrow \texttt{Exp}
+\end{equation}
+
+Finally, we must address values, which cannot be stepped. Typically, this is
+expressed by having the \texttt{step} function return a partial value akin to
+\texttt{Maybe}. However, this representation is extremely unwieldy to work with
+in an equation, so we instead parameterize the \texttt{Exp} datatype by whether
+it can be stepped:
+
+\begin{lstlisting}
+  data Steppable : Set where
+    IsValue: Steppable
+    CanStep: Steppable
+
+  data Exp : Steppable $\rightarrow$ Set where
+    ...
+
+  step : ($e:$ Exp) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
+\end{lstlisting}
+
+\section{Deriving Semantics}
+
+\subsection{Target Language}
 
 \bibliographystyle{acm}
 \bibliography{refs}
