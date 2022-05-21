@@ -84,7 +84,7 @@
 %% used to denote shared contribution to the research.
 \author{Cameron Wong}
 \affiliation{%
-  \institution{Harvard University}
+  \institution{Jane Street/Harvard University}
   \country{USA}
 }
 
@@ -123,12 +123,40 @@
 
 \section{Introduction}
 
+When developing a new programming language, the most important foundational
+consideration is ensuring that it is \emph{type safe}. Without this crucial
+property, it is difficult to reason abstractly about programs written in such
+a language, often requiring extra specification, or whole-program reasoning to
+ensure that a seemingly type-correct program behaves as desired. Despite this
+importance, the process of producing a soundness proof is rarely interesting in
+and of itself, with the proof(s) frequently reduced to a sketch stating only
+what to induct on.
+
+It can be far more illustrative when a soundness proof \emph{fails}, as this
+can highlight inherent problems with the core language semantics and suggest
+way those problems can be fixed. But how can this be, when the finished proofs
+are so simple as to be left as exercises to the reader?
+
+Bahr and Hutton \cite{bahr:2015} recently demonstrated a new technique to
+deriving compilers from a source language specification using only elementary
+equational reasoning. In the context of type systems, it is noteworthy that
+their procedure entails \emph{discovering} the syntax and semantics of their
+target language
+
+In the rest of this document, I first describe how the usual formulation of
+type soundness can be phrased as an equation, then derive a small-step
+operational semantics for a simple expression language from that equation using
+simple, straightforward reasoning. Following the example of Pickard and Hutton
+\cite{pickard:2021}, all my programs and calculations are done in Agda, as it
+allows me to embed the final soundness proofs alongside the target language
+itself.
+
 \section{Type Safety as an Equation}
 
-To reason equationally in the style of Bahr and Hutton, we must first find a
-suitable equation to reason about.
+To reason equationally in the style of Bahr and Hutton \cite{bahr:2015}, we must
+first find a suitable equation to reason about.
 
-Proving type safety most commonly requires proving the twin theorems of
+Proving type safety classically requires proving the twin theorems of
 progress and preservation \cite{harper:pfpl}. Colloquially, progress states
 that ``well-typed programs do not get stuck'', and preservation states that
 ``a program has the same type after each evaluation step''. The latter seems
