@@ -58,10 +58,14 @@
 %%\citestyle{acmauthoryear}
 
 \usepackage{listings}
+\usepackage{amsthm}
+
 \lstset{
   basicstyle=\ttfamily,
   mathescape
 }
+
+\newtheorem{theorem}{Theorem}
 
 %%
 %% end of the preamble, start of the body of the document source.
@@ -132,9 +136,13 @@ promising for an equational approach, as it is a statement \emph{equating} two
 things -- namely, the type of an expression before and after being stepped.
 
 We specify the target language by converting its typing judgment $\Gamma
-\vdash e : \tau$ into an Agda function \texttt{typeof : Exp}$\rightarrow$
-\texttt{Maybe Type} with the property $\texttt{typeof}\ e=\texttt{Just}\ \tau$
-iff $\emptyset \vdash e : \tau$.
+\vdash e : \tau$ into an Agda function
+
+\begin{equation}
+  \texttt{typeof} : \texttt{Exp} \rightarrow \texttt{Maybe Type}
+\end{equation}
+
+with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
 
 We next amend the type of \texttt{step} to take a witness that its argument
 is well-typed, which will be useful later:
@@ -148,7 +156,7 @@ Finally, we must address values, which cannot be stepped. Typically, this is
 expressed by having the \texttt{step} function return a partial value akin to
 \texttt{Maybe}. However, this representation is extremely unwieldy to work with
 in an equation, so we instead parameterize the \texttt{Exp} datatype by whether
-it can be stepped:
+it can be stepped.
 
 \begin{lstlisting}
   data Steppable : Set where
@@ -161,7 +169,23 @@ it can be stepped:
   step : ($e:$ Exp) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
 \end{lstlisting}
 
-\section{Deriving Semantics}
+Note that \texttt{step} now hides the \texttt{Steppable} parameter of its
+return type behind an existential, as we cannot know whether the result can be
+evaluated further.
+
+Agda enforces that functions are total, so any well-typed implementation of the
+\texttt{step} function is a proof of the progress theorem. All the pieces are
+in place, then, to relate progress (\texttt{step}) to the typing judgment
+(\texttt{typeof}) via the \emph{preservation equation}:
+
+\begin{equation}
+  \texttt{typeof}\ e = \texttt{typeof}\ (\texttt{step e p})
+\end{equation}
+
+where $e : \texttt{Exp CanStep}$ and $p : (\emptyset \vdash e : \tau)$ for some
+$\tau : \texttt{Type}$.
+
+\section{The Derivation}
 
 \subsection{Target Language}
 
