@@ -132,13 +132,9 @@ promising for an equational approach, as it is a statement \emph{equating} two
 things -- namely, the type of an expression before and after being stepped.
 
 We specify the target language by converting its typing judgment $\Gamma
-\vdash e : \tau$ into an Agda function
-
-\begin{equation}
-  \texttt{typeof} : \texttt{Exp} \rightarrow \texttt{Maybe Type}
-\end{equation}
-
-with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
+\vdash e : \tau$ into an Agda function \texttt{typeof : Exp}$\rightarrow$
+\texttt{Maybe Type} with the property $\texttt{typeof}\ e=\texttt{Just}\ \tau$
+iff $\emptyset \vdash e : \tau$.
 
 We next amend the type of \texttt{step} to take a witness that its argument
 is well-typed, which will be useful later:
