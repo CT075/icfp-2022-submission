@@ -274,7 +274,7 @@ We begin by applying the definition of \texttt{typeof}:
 
 \begin{lstlisting}
   typeof (add $e_1$ $e_2$)
-    = $\langle$ \text{definition of \texttt{typeof}} $\rangle$
+    = $\langle\textsf{definition of \texttt{typeof}}\rangle$
   case (typeof $e_1$, typeof $e_2$) ...
 \end{lstlisting}
 
@@ -283,7 +283,7 @@ further. To proceed, we have no choice but to cite the inductive hypothesis:
 
 \begin{lstlisting}
   case (typeof $e_1$, typeof $e_2$) ...
-    = $\langle\text{inductive hypothesis on \texttt{typeof} $e_1$}\rangle$
+    = $\langle\textsf{inductive hypothesis on \texttt{typeof} }e_1\rangle$
   case (typeof (step $e_1$), typeof $e_2$) ...
 \end{lstlisting}
 
@@ -291,7 +291,7 @@ We finally apply the definition of \texttt{typeof} in reverse:
 
 \begin{lstlisting}
   case (typeof (step $e_1$), typeof $e_2$) ...
-    = $\langle\text{definition of \texttt{typeof}}\rangle$
+    = $\langle\textsf{definition of \texttt{typeof}}\rangle$
   typeof (add (step $e_1$) $e_2$)
 \end{lstlisting}
 
