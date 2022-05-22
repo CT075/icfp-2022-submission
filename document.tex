@@ -125,31 +125,31 @@
 
 \section{Introduction}
 
-When developing a new programming language, the most important foundational
-consideration is ensuring that it is \emph{type safe}. Without this crucial
-property, it is difficult to reason abstractly about programs written in such
-a language, often requiring extra specification, or whole-program reasoning to
-ensure that a seemingly type-correct program behaves as desired. Despite this
-importance, the process of producing a soundness proof is rarely interesting in
-and of itself, with the proof(s) frequently reduced to a sketch stating only
-what to induct on.
+%When developing a new programming language, the most important foundational
+%consideration is ensuring that it is \emph{type safe}. Without this crucial
+%property, it is difficult to reason abstractly about programs written in such
+%a language, often requiring extra specification, or whole-program reasoning to
+%ensure that a seemingly type-correct program behaves as desired. Despite this
+%importance, the process of producing a soundness proof is rarely interesting in
+%and of itself, with the proof(s) frequently reduced to a sketch stating only
+%what to induct on.
 
 %It can be far more illustrative when a soundness proof \emph{fails}, as this
 %can highlight inherent problems with the core language semantics and suggest
 %way those problems can be fixed. But how can this be, when the finished proofs
 %are so simple as to be left as exercises to the reader?
 
-As these proofs are so simple, a natural question is whether these proofs can
-be automatically generated. While there is a wealth of recent work on
-\emph{implementing} programming languages in an automatically correct way
-(Rouvoet \cite{rouvoet:2021}, Pardo et al \cite{pardoetal:2018}, among many
-others), we were unable to find any research on automatically ensuring that the
-language semantics \emph{themselves} are sound.
+%As these proofs are so simple, a natural question is whether these proofs can
+%be automatically generated. While there is a wealth of recent work on
+%\emph{implementing} programming languages in an automatically correct way
+%(Rouvoet \cite{rouvoet:2021}, Pardo et al \cite{pardoetal:2018}, among many
+%others), we were unable to find any research on automatically ensuring that the
+%language semantics \emph{themselves} are sound.
 
 We adapt the approach pioneered by Bahr and Hutton \cite{bahr:2015} for
 computing compilers to instead compute the runtime semantics of a type system
 to automatically satisfy progress and preservation.
-In the rest of this document, we first describe how the classic formulation of
+In this document, we first describe how the classic formulation of
 type soundness can be phrased as an equation, then use that equation to
 derive a small-step operational semantics for a simple expression language.
 Following the example of Pickard and Hutton \cite{pickard:2021}, all our
@@ -170,19 +170,19 @@ things -- namely, the type of an expression before and after being stepped.
 We specify the target language by converting its typing judgment $\Gamma
 \vdash e : \tau$ into an Agda function
 
-\begin{equation}
+\begin{equation*}
   \texttt{typeof} : \texttt{Exp} \rightarrow \texttt{Maybe Type}
-\end{equation}
+\end{equation*}
 
 with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
 
 We next amend the type of \texttt{step} to take a witness that its argument
 is well-typed, which will be useful later:
 
-\begin{equation}
+\begin{equation*}
   \texttt{step} : (e: \texttt{Exp}) \rightarrow (\emptyset \vdash e : \tau)
     \rightarrow \texttt{Exp}
-\end{equation}
+\end{equation*}
 
 Finally, we must address values, which cannot be stepped. Typically, this is
 expressed by having the \texttt{step} function return a partial value akin to
@@ -209,7 +209,7 @@ Agda enforces that functions are total, so any well-typed implementation of the
 in place, then, to relate progress (\texttt{step}) to the typing judgment
 (\texttt{typeof}) via the \emph{preservation equation}:
 
-\begin{equation}
+\begin{equation}\label{eq:preservation}
   \texttt{typeof}\ e = \texttt{typeof}\ (\texttt{step e p})
 \end{equation}
 
@@ -231,13 +231,23 @@ language as follows:
     if : Exp $S_n \rightarrow$ Exp $S_1 \rightarrow$ Exp $S_2 \rightarrow$ Exp Steps
 \end{lstlisting}
 
+with the following typing rules (in Agda):
+
+\begin{lstlisting}
+  data $\vdash$\_:\_ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
+    typ-bool : $\vdash$(boolVal b):Bool
+    typ-nat : $\vdash$(intVal i):$\N$
+    typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash (\texttt{add}\ e_1\ e_2):\N$
+    typ-if : $\vdash e:\texttt{Bool} \rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash (\texttt{if}\ e\ e_1\ e_2):\tau$
+\end{lstlisting}
+
 where $\N$ represents Agda's usual type of natural numbers.
 
 We don't use the usual dependently-typed trick of parameterizing
 \texttt{Exp} with its type, as it would trivialize the \texttt{typeof}
 function, breaking the trick.
 
-Speaking of, we define \texttt{typeof} as follows:\footnote{The actual
+Speaking of, the implementation of \texttt{typeof}:\footnote{The actual
 implementation in Agda is somewhat more complex, and is simplified for
 presentation. Agda does not support Haskell-style \texttt{case} expressions,
 nor can it, in general, decide equality or inequality of \texttt{Set}s.
@@ -257,6 +267,12 @@ type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
            if $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
        | \_ -> Nothing
 \end{lstlisting}
+
+We are ready to proceed. Our goal is to define the function \texttt{step}
+satisfying equation \ref{eq:preservation}. As per Bahr and Hutton
+\cite{bahr:2015}, we will proceed by evaluating the left hand side of equation
+\ref{eq:preservation} and seek to transform it into an expression of the form
+$\texttt{typeof}\ c$, at which point we can
 
 \bibliographystyle{acm}
 \bibliography{refs}
