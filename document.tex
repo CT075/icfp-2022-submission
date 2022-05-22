@@ -225,7 +225,7 @@ language as follows:
     boolVal : Bool $\rightarrow$ Exp Value
     intVal : $\N \rightarrow$ Exp Value
     add : Exp $S \rightarrow$ Exp Steps
-    if : Exp $S_n \rightarrow$ Exp $S_1 \rightarrow$ Exp $S_2 \rightarrow$ Exp Steps
+    if_ : Exp $S_n \rightarrow$ Exp $S_1 \rightarrow$ Exp $S_2 \rightarrow$ Exp Steps
 \end{lstlisting}
 
 with the following typing rules (in Agda):
@@ -250,10 +250,10 @@ type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
     case (typeof $e_1$, typeof $e_2$)
       of (Just $\N$, Just $\N$) -> Just $\N$
        | _ -> Nothing
-  typeof (if $e$ $e_1$ $e_2$) =
+  typeof (if_ $e$ $e_1$ $e_2$) =
     case (typeof $e$, typeof $e_1$, typeof $e_2$)
       of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
-           if $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+           if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
        | _ -> Nothing
 \end{lstlisting}
 
@@ -302,6 +302,50 @@ namely, $c = \texttt{add}\ (\texttt{step}\ e_1)\ e_2$. We wrap up by defining
 \begin{lstlisting}
   step (add $e_1$ $e_2$) = add (step $e_1$) $e_2$
 \end{lstlisting}
+
+We note in passing that this construction forces a ``left-first'' evaluation
+strategy. If both $e_1$ and $e_2$ can be stepped, we have the choice of
+invoking the inductive hypothesis on $e_1$, $e_2$ or both, corresponding to
+left-first, right-first or parallel evaluation respectively.
+
+\textbf{Case:} $e = \texttt{if\_}\ (\texttt{boolVal true})\ e_1\ e_2$
+
+As with before, we begin by expanding \texttt{typeof}:
+
+\begin{lstlisting}
+  typeof (if_ (boolVal true) $e_1$ $e_2$)
+    = $\langle\textsf{definition of \texttt{typeof}}\rangle$
+  case (typeof (boolVal true), typeof $e_1$, typeof $e_2$)
+    of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
+         if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+      ...
+\end{lstlisting}
+
+We are once again stuck. Unlike before, we have no assumptions about whether
+$e_1$ or $e_2$ are steppable, so we cannot cite the inductive hypothesis. By
+the assumption that $e$ is well-typed, we can assume that $e_1$ and $e_2$ have
+the same type, namely that $\texttt{typeof} e_1 = \texttt{typeof} e_2 =
+\texttt{Just}\ \tau$ for some $\tau$. Then:
+
+\begin{lstlisting}
+  case (typeof (boolVal true), typeof $e_1$, typeof $e_2$)
+    of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
+         if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+      ...
+    = $\langle\textsf{assumption}\rangle$
+  if $\tau = \tau$ then Just $\tau$ else Nothing
+    = $\langle\textsf{evaluation step}\rangle$
+  Just $\tau$
+    = $\langle\textsf{assumption}\rangle$
+  typeof $e_1$
+\end{lstlisting}
+
+Here, we needed to make a human judgment of which of $e_1$ or $e_2$ to evaluate
+to.
+
+\subsection{Reflection}
+
+\section{Future Work}
 
 \bibliographystyle{acm}
 \bibliography{refs}
