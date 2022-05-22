@@ -227,6 +227,35 @@ language as follows:
   data Exp : Steppable $\rightarrow$ Set where
     boolVal : Bool $\rightarrow$ Exp Value
     intVal : $\N \rightarrow$ Exp Value
+    add : Exp $S \rightarrow$ Exp Steps
+    if : Exp $S_n \rightarrow$ Exp $S_1 \rightarrow$ Exp $S_2 \rightarrow$ Exp Steps
+\end{lstlisting}
+
+where $\N$ represents Agda's usual type of natural numbers.
+
+We don't use the usual dependently-typed trick of parameterizing
+\texttt{Exp} with its type, as it would trivialize the \texttt{typeof}
+function, breaking the trick.
+
+Speaking of, we define \texttt{typeof} as follows:\footnote{The actual
+implementation in Agda is somewhat more complex, and is simplified for
+presentation. Agda does not support Haskell-style \texttt{case} expressions,
+nor can it, in general, decide equality or inequality of \texttt{Set}s.
+Instead, we use the usual \texttt{fold} operator over the \texttt{Maybe}
+type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
+
+\begin{lstlisting}
+  typeof (boolVal \_) = Bool
+  typeof (intVal \_) = $\N$
+  typeof (add $e_1$ $e_2$) =
+    case (typeof $e_1$, typeof $e_2$)
+      of (Just $\N$, Just $\N$) -> Just $\N$
+       | \_ -> Nothing
+  typeof (if $e$ $e_1$ $e_2$) =
+    case (typeof $e$, typeof $e_1$, typeof $e_2$)
+      of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
+           if $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+       | \_ -> Nothing
 \end{lstlisting}
 
 \bibliographystyle{acm}
