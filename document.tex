@@ -176,15 +176,7 @@ We specify the target language by converting its typing judgment $\Gamma
 
 with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
 
-We next amend the type of \texttt{step} to take a witness that its argument
-is well-typed, which will be useful later:
-
-\begin{equation*}
-  \texttt{step} : (e: \texttt{Exp}) \rightarrow (\emptyset \vdash e : \tau)
-    \rightarrow \texttt{Exp}
-\end{equation*}
-
-Finally, we must address values, which cannot be stepped. Typically, this is
+Next, we must address values, which cannot be stepped. Typically, this is
 expressed by having the \texttt{step} function return a partial value akin to
 \texttt{Maybe}. However, this representation is extremely unwieldy to work with
 in an equation, so we instead parameterize the \texttt{Exp} datatype by whether
@@ -198,23 +190,28 @@ it can be stepped.
   data Exp : Steppable $\rightarrow$ Set where
     ...
 
-  step : ($e:$ Exp Steps) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
+  step : ($e:$ Exp Steps) $\rightarrow \exists S . \texttt{Exp}\ S$
 \end{lstlisting}
 
-Note that \texttt{step} now returns an existential \texttt{Exp }$S$, as we
+Notice that \texttt{step} now returns an existential \texttt{Exp }$S$, as we
 cannot know whether the result can be evaluated further.
 
-Agda enforces that functions are total, so any well-typed implementation of the
-\texttt{step} function is a proof of the progress theorem. All the pieces are
+There is a further issue of attempting to step ill-typed programs. In the
+implementation, this is resolved by further amending \texttt{step} to also take
+a proof that its argument is well-typed. As Agda enforces that functions are
+total, such a function actually serves as a proof of the progress theorem.
+This obfuscates the calculation, however, so we will elide it and assume that
+the expression being stepped is, in fact, well-formed.
+
+All the pieces are
 in place, then, to relate progress (\texttt{step}) to the typing judgment
 (\texttt{typeof}) via the \emph{preservation equation}:
 
 \begin{equation}\label{eq:preservation}
-  \texttt{typeof}\ e = \texttt{typeof}\ (\texttt{step e p})
+  \texttt{typeof}\ e = \texttt{typeof}\ (\texttt{step e})
 \end{equation}
 
-where $e : \texttt{Exp CanStep}$ and $p : (\emptyset \vdash e : \tau)$ for some
-$\tau : \texttt{Type}$.
+where $e : \texttt{Exp CanStep}$.
 
 \section{The Derivation}
 
@@ -233,14 +230,6 @@ language as follows:
 
 with the following typing rules (in Agda):
 
-\begin{lstlisting}
-  data $\vdash\_:\_$ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
-    typ-bool : $\vdash$(boolVal b):Bool
-    typ-nat : $\vdash$(intVal i):$\N$
-    typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash$(add $e_1$ $e_2$)$:\N$
-    typ-if : $\vdash e:$Bool $\rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash ($if $e$ $e_1$ $e_2):\tau$
-\end{lstlisting}
-
 where $\N$ represents Agda's usual type of natural numbers.
 
 We don't use the usual dependently-typed trick of parameterizing
@@ -255,24 +244,63 @@ Instead, we use the usual \texttt{fold} operator over the \texttt{Maybe}
 type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
 
 \begin{lstlisting}
-  typeof (boolVal \_) = Bool
-  typeof (intVal \_) = $\N$
+  typeof (boolVal _) = Bool
+  typeof (intVal _) = $\N$
   typeof (add $e_1$ $e_2$) =
     case (typeof $e_1$, typeof $e_2$)
       of (Just $\N$, Just $\N$) -> Just $\N$
-       | \_ -> Nothing
+       | _ -> Nothing
   typeof (if $e$ $e_1$ $e_2$) =
     case (typeof $e$, typeof $e_1$, typeof $e_2$)
       of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
            if $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
-       | \_ -> Nothing
+       | _ -> Nothing
 \end{lstlisting}
 
 We are ready to proceed. Our goal is to define the function \texttt{step}
 satisfying equation \ref{eq:preservation}. As per Bahr and Hutton
-\cite{bahr:2015}, we will proceed by evaluating the left hand side of equation
-\ref{eq:preservation} and seek to transform it into an expression of the form
-$\texttt{typeof}\ c$, at which point we can
+\cite{bahr:2015}, we will proceed by structural induction on $e$, evaluating
+the left hand side of equation \ref{eq:preservation} and seek to transform it
+into an expression of the form $\texttt{typeof}\ c$, then take $\texttt{step e}
+= c$ as a definition for that case of \texttt{step}.
+
+\subsection{Semantics Calculation}
+
+For brevity, we only show the two most demonstrative cases.
+
+\textbf{Case:} $e = \texttt{add}\ e_1\ e_2$, where $e_1 : \texttt{Exp CanStep}$
+
+We begin by applying the definition of \texttt{typeof}:
+
+\begin{lstlisting}
+  typeof (add $e_1$ $e_2$)
+    = $\langle$ \text{definition of \texttt{typeof}} $\rangle$
+  case (typeof $e_1$, typeof $e_2$) ...
+\end{lstlisting}
+
+We are immediately stuck, as we cannot expand $\texttt{typeof}\ e_1$ any
+further. To proceed, we have no choice but to cite the inductive hypothesis:
+
+\begin{lstlisting}
+  case (typeof $e_1$, typeof $e_2$) ...
+    = $\langle$ \text{inductive hypothesis on \texttt{typeof} $e_1$} $\rangle$
+  case (typeof (step $e_1$), typeof $e_2$) ...
+\end{lstlisting}
+
+We finally apply the definition of \texttt{typeof} in reverse:
+
+\begin{lstlisting}
+  case (typeof (step $e_1$), typeof $e_2$) ...
+    = $\langle$ \text{definition of \texttt{typeof}} $\rangle$
+  typeof (add (step $e_1$) $e_2$)
+\end{lstlisting}
+
+This is now of the form $\texttt{typeof} (\texttt{add}\ e_1\ e_2) = \texttt{typeof}\ c$,
+namely, $c = \texttt{add}\ (\texttt{step}\ e_1)\ e_2$. We wrap up by defining
+the form of \texttt{step} in this case:
+
+\begin{lstlisting}
+\end{lstlisting}
 
 \bibliographystyle{acm}
 \bibliography{refs}
