@@ -190,18 +190,17 @@ it can be stepped.
 
 \begin{lstlisting}
   data Steppable : Set where
-    IsValue: Steppable
-    CanStep: Steppable
+    Value: Steppable
+    Steps: Steppable
 
   data Exp : Steppable $\rightarrow$ Set where
     ...
 
-  step : ($e:$ Exp CanStep) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
+  step : ($e:$ Exp Steps) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
 \end{lstlisting}
 
-Note that \texttt{step} now hides the \texttt{Steppable} parameter of its
-return type behind an existential, as we cannot know whether the result can be
-evaluated further.
+Note that \texttt{step} now returns an existential \texttt{Exp }$S$, as we
+cannot know whether the result can be evaluated further.
 
 Agda enforces that functions are total, so any well-typed implementation of the
 \texttt{step} function is a proof of the progress theorem. All the pieces are
@@ -218,6 +217,15 @@ $\tau : \texttt{Type}$.
 \section{The Derivation}
 
 \subsection{Target Language}
+
+Our target language for this demonstration is a simple, typed expression
+language as follows:
+
+\begin{lstlisting}
+  data Exp : Steppable $\rightarrow$ Set where
+    boolVal : Bool $\rightarrow$ Exp Value
+    intVal : $\N \rightarrow$ Exp Value
+\end{lstlisting}
 
 \bibliographystyle{acm}
 \bibliography{refs}
