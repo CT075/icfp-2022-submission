@@ -74,7 +74,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{Equationally Correct Operational Semantics (Extended Abstract)}
+\title{Equationally Correct Semantics (Extended Abstract)}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -132,29 +132,31 @@ importance, the process of producing a soundness proof is rarely interesting in
 and of itself, with the proof(s) frequently reduced to a sketch stating only
 what to induct on.
 
-It can be far more illustrative when a soundness proof \emph{fails}, as this
-can highlight inherent problems with the core language semantics and suggest
-way those problems can be fixed. But how can this be, when the finished proofs
-are so simple as to be left as exercises to the reader?
+%It can be far more illustrative when a soundness proof \emph{fails}, as this
+%can highlight inherent problems with the core language semantics and suggest
+%way those problems can be fixed. But how can this be, when the finished proofs
+%are so simple as to be left as exercises to the reader?
 
-Bahr and Hutton \cite{bahr:2015} recently demonstrated a new technique to
-deriving compilers from a source language specification using only elementary
-equational reasoning. In the context of type systems, it is noteworthy that
-their procedure entails \emph{discovering} the syntax and semantics of their
-target language
+As these proofs are so simple, a natural question is whether these proofs can
+be automatically generated. While there is a wealth of recent work on
+\emph{implementing} programming languages in an automatically correct way
+(Rouvoet \cite{rouvoet:2021}, Pardo et al \cite{pardoetal:2018}, among many
+others), we were unable to find any research on automatically ensuring that the
+language semantics \emph{themselves} are sound.
 
-In the rest of this document, I first describe how the usual formulation of
+We adapt the approach pioneered by Bahr and Hutton \cite{bahr:2015} for
+computing compilers to instead compute the runtime semantics of a type system
+to automatically satisfy progress and preservation.
+In the rest of this document, we first describe how the classic formulation of
 type soundness can be phrased as an equation, then derive a small-step
-operational semantics for a simple expression language from that equation using
-simple, straightforward reasoning. Following the example of Pickard and Hutton
-\cite{pickard:2021}, all my programs and calculations are done in Agda, as it
-allows me to embed the final soundness proofs alongside the target language
-itself.
+operational semantics for a simple expression language from that equation.
+Following the example of Pickard and Hutton \cite{pickard:2021}, all our
+programs and calculations are done in Agda, as the additional precision of
+dependent types is necessary to avoid otherwise-troublesome partiality issues.
 
 \section{Type Safety as an Equation}
 
-To reason equationally in the style of Bahr and Hutton \cite{bahr:2015}, we must
-first find a suitable equation to reason about.
+To reason equationally, we must first find a suitable equation to reason about.
 
 Proving type safety classically requires proving the twin theorems of
 progress and preservation \cite{harper:pfpl}. Colloquially, progress states
@@ -194,7 +196,7 @@ it can be stepped.
   data Exp : Steppable $\rightarrow$ Set where
     ...
 
-  step : ($e:$ Exp) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
+  step : ($e:$ Exp CanStep) $\rightarrow$ $(\emptyset \vdash e : \tau) \rightarrow \exists S . \texttt{Exp}\ S$
 \end{lstlisting}
 
 Note that \texttt{step} now hides the \texttt{Steppable} parameter of its
@@ -221,5 +223,4 @@ $\tau : \texttt{Type}$.
 \bibliography{refs}
 
 \end{document}
-\endinput
 %%
