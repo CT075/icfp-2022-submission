@@ -234,11 +234,11 @@ language as follows:
 with the following typing rules (in Agda):
 
 \begin{lstlisting}
-  data $\vdash$\_:\_ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
+  data $\vdash\_:\_$ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
     typ-bool : $\vdash$(boolVal b):Bool
     typ-nat : $\vdash$(intVal i):$\N$
-    typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash (\texttt{add}\ e_1\ e_2):\N$
-    typ-if : $\vdash e:\texttt{Bool} \rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash (\texttt{if}\ e\ e_1\ e_2):\tau$
+    typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash$(add $e_1$ $e_2$)$:\N$
+    typ-if : $\vdash e:$Bool $\rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash ($if $e$ $e_1$ $e_2):\tau$
 \end{lstlisting}
 
 where $\N$ represents Agda's usual type of natural numbers.
