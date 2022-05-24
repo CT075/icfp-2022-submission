@@ -200,8 +200,8 @@ There is a further issue of attempting to step ill-typed programs. In the
 implementation, this is resolved by further amending \texttt{step} to also take
 a proof that its argument is well-typed. As Agda enforces that functions are
 total, such a function actually serves as a proof of the progress theorem.
-This obfuscates the calculation, however, so we will elide it and assume that
-the expression being stepped is, in fact, well-formed.
+This obscures the calculation, however, so we will elide it from the type of
+\texttt{step} and instead merely include it as an assumption.
 
 All the pieces are
 in place, then, to relate progress (\texttt{step}) to the typing judgment
@@ -230,6 +230,14 @@ language as follows:
 
 with the following typing rules (in Agda):
 
+\begin{lstlisting}
+  data $\vdash$\_:\_ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
+    typ-bool : $\vdash$(boolVal b):Bool
+    typ-nat : $\vdash$(intVal i):$\N$
+    typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash (\texttt{add}\ e_1\ e_2):\N$
+    typ-if : $\vdash e:\texttt{Bool} \rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash (\texttt{if}\ e\ e_1\ e_2):\tau$
+\end{lstlisting}
+
 where $\N$ represents Agda's usual type of natural numbers.
 
 We don't use the usual dependently-typed trick of parameterizing
@@ -253,7 +261,9 @@ type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
   typeof (if_ $e$ $e_1$ $e_2$) =
     case (typeof $e$, typeof $e_1$, typeof $e_2$)
       of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
-           if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+           if $\tau_1 = \tau_2$
+             then Just $\tau_1$
+             else Nothing
        | _ -> Nothing
 \end{lstlisting}
 
@@ -266,7 +276,9 @@ into an expression of the form $\texttt{typeof}\ c$, then take $\texttt{step e}
 
 \subsection{Semantics Calculation}
 
-For brevity, we only show the two most demonstrative cases.
+Let $\vdash e : \tau$.
+
+For brevity, we show only two representative cases.
 
 \textbf{Case:} $e = \texttt{add}\ e_1\ e_2$, where $e_1 : \texttt{Exp CanStep}$
 
@@ -315,22 +327,30 @@ As with before, we begin by expanding \texttt{typeof}:
 \begin{lstlisting}
   typeof (if_ (boolVal true) $e_1$ $e_2$)
     = $\langle\textsf{definition of \texttt{typeof}}\rangle$
-  case (typeof (boolVal true), typeof $e_1$, typeof $e_2$)
+  case ...
     of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
-         if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+         if_ $\tau_1 = \tau_2$
+           then Just $\tau_1$
+           else Nothing
       ...
 \end{lstlisting}
 
-We are once again stuck. Unlike before, we have no assumptions about whether
-$e_1$ or $e_2$ are steppable, so we cannot cite the inductive hypothesis. By
-the assumption that $e$ is well-typed, we can assume that $e_1$ and $e_2$ have
-the same type, namely that $\texttt{typeof} e_1 = \texttt{typeof} e_2 =
-\texttt{Just}\ \tau$ for some $\tau$. Then:
+We are once again stuck. Unlike before, we have made no assumptions about
+whether $e_1$ or $e_2$ are steppable, so we cannot cite the inductive
+hypothesis.
+
+By inversion on the assumption $\vdash e : \tau$, we
+can conclude that $\vdash e_1 : \tau$ and $\vdash e_2: \tau$, and thus
+$\texttt{typeof} e_1 = \texttt{typeof} e_2 = \tau$.
+
+Then:
 
 \begin{lstlisting}
-  case (typeof (boolVal true), typeof $e_1$, typeof $e_2$)
+  case ...
     of (Just Bool, Just $\tau_1$, Just $\tau_2$) ->
-         if_ $\tau_1 = \tau_2$ then Just $\tau_1$ else Nothing
+         if_ $\tau_1 = \tau_2$
+           then Just $\tau_1$
+           else Nothing
       ...
     = $\langle\textsf{assumption}\rangle$
   if $\tau = \tau$ then Just $\tau$ else Nothing
@@ -343,9 +363,39 @@ the same type, namely that $\texttt{typeof} e_1 = \texttt{typeof} e_2 =
 Here, we needed to make a human judgment of which of $e_1$ or $e_2$ to evaluate
 to.
 
-\subsection{Reflection}
+\subsection{Implementation}
 
-\section{Future Work}
+The example language semantics, along with their proofs of correctness, have
+been fully mechanized in Agda, available at \texttt{https://github.com/CT075/calculated-semantics}.
+This includes the unsimplified \texttt{step} fully witnessing progress and a
+proof that the \texttt{typeof} function respects the static typing rules.
+
+\section{Reflection and Future Work}
+
+In summary, we have seen that elementary, equational reasoning can be used to
+discover an operational semantics for a type system. As with Bahr and Hutton
+\cite{bahr:2015}, our proof of soundness falls out of the derivation process.
+
+An unsatisfying part of the derivation is that, ultimately, it requires a human
+to make decisions. For example, choosing which branch of the \texttt{if_}
+variant corresponds to \texttt{true}. This has consequences on evaluation
+order, as previously noted, but also on correctness. Consider that, as
+presented, there is nothing associating the \texttt{add} variant with the $(+)$
+operator on naturals beyond our human intuition, which presents an obstacle to
+fully automating this process. We hope that the addition of a further language
+specification, such as a denotational semantics, may help resolve this.
+
+A logical next step would be to apply this technique to a language with a more
+sophisticated typing algorithm. As a first step in this direction, we hope to
+derive a semantics for System $F_{\omega}$, the higher-kinded polymorphic
+lambda calculus.
+
+\section*{Acknowledgements}
+
+Thanks to Dr. Antal Spector-Zabusky, my friend and confidant of two years at
+Jane Street, for presentation advice and for convincing me to submit this work
+in the first place. Thanks also to Dr. Jonathan Aldrich, for the early technical
+advice necessary to get this project off the ground.
 
 \bibliographystyle{acm}
 \bibliography{refs}
