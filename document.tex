@@ -8,8 +8,8 @@
 %% the commands and values with those provided to you when you
 %% complete the rights form.
 \setcopyright{XXX}
-\copyrightyear{XXXX}
-\acmYear{XXXX}
+\copyrightyear{2022}
+\acmYear{2022}
 \acmDOI{XXXXXXX.XXXXXXX}
 
 %% These commands are for a PROCEEDINGS abstract or paper.
@@ -61,7 +61,7 @@
 \usepackage{amsthm}
 
 \lstset{
-  basicstyle=\ttfamily,
+  basicstyle=\small\ttfamily,
   mathescape
 }
 
@@ -146,26 +146,32 @@
 %others), we were unable to find any research on automatically ensuring that the
 %language semantics \emph{themselves} are sound.
 
-We adapt the approach pioneered by Bahr and Hutton \cite{bahr:2015} for
-computing compilers to instead compute the runtime semantics of a type system
-to automatically satisfy progress and preservation.
-In this document, we first describe how the classic formulation of
-type soundness can be phrased as an equation, then use that equation to
-derive a small-step operational semantics for a simple expression language.
-Following the example of Pickard and Hutton \cite{pickard:2021}, all our
-programs and calculations are done in Agda, as the additional precision of
-dependent types is necessary to avoid otherwise-troublesome partiality issues.
+We developed a new technique for systemically deriving type-safe
+small-step operational semantics automatically satisfying progress and
+preservation with respect to a typing algorithm. All proofs and
+derivations have been mechanised in the Agda proof assistant.
+
+Our technique is an adaptation of the one pioneered by Bahr and Hutton
+\cite{bahr:2015} for computing compilers. Following the example of
+Pickard and Hutton \cite{pickard:2021}, we choose a dependently-typed
+setting to avoid troublesome partiality issues. We will first describe
+how type soundness can be phrased as an equation, then use that equation
+to derive a small-step operational semantics for a simple expression
+language.
 
 \section{Type Safety as an Equation}
 
-To reason equationally, we must first find a suitable equation to reason about.
+We seek to define a runtime semantics for a language, which we quantify as
+the function \texttt{step}.  Our first order of business is to phrase our
+correctness condition as an equation relating \texttt{step} to our other
+desired quantities, namely, type soundness.
 
-Proving type safety classically requires proving the twin theorems of
+The classic statement of type soundness is the twin theorems of
 progress and preservation \cite{harper:pfpl}. Colloquially, progress states
 that ``well-typed programs do not get stuck'', and preservation states that
 ``a program has the same type after each evaluation step''. The latter seems
-promising for an equational approach, as it is a statement \emph{equating} two
-things -- namely, the type of an expression before and after being stepped.
+like a promising equation candidate, as it is a statement \emph{equating} two
+things --- namely, the type of an expression before and after each step.
 
 We specify the target language by converting its typing judgment $\Gamma
 \vdash e : \tau$ into an Agda function
@@ -176,11 +182,11 @@ We specify the target language by converting its typing judgment $\Gamma
 
 with the property $\texttt{typeof}\ e = \tau$ iff $\emptyset \vdash e : \tau$.
 
-Next, we must address values, which cannot be stepped. Typically, this is
-expressed by having the \texttt{step} function return a partial value akin to
-\texttt{Maybe}. However, this representation is extremely unwieldy to work with
-in an equation, so we instead parameterize the \texttt{Exp} datatype by whether
-it can be stepped.
+Next, consider syntactic values, which cannot be stepped. Typically, this is
+expressed by having the \texttt{step} function return a partial value such as a
+\texttt{Maybe}. In an equation, however, we will have to branch on the result,
+which becomes unwieldy. Instead, we parameterize the \texttt{Exp} datatype by
+whether it can be stepped.
 
 \begin{lstlisting}
   data Steppable : Set where
@@ -197,10 +203,10 @@ Notice that \texttt{step} now returns an existential \texttt{Exp }$S$, as we
 cannot know whether the result can be evaluated further.
 
 There is a further issue of attempting to step ill-typed programs. In the
-implementation, this is resolved by further amending \texttt{step} to also take
+mechanisation, this is addressed by further amending \texttt{step} to also take
 a proof that its argument is well-typed. As Agda enforces that functions are
 total, such a function actually serves as a proof of the progress theorem.
-This obscures the calculation, however, so we will elide it from the type of
+This obscures the process, however, so we will elide it from the type of
 \texttt{step} and instead merely include it as an assumption.
 
 All the pieces are
@@ -217,43 +223,31 @@ where $e : \texttt{Exp CanStep}$.
 
 \subsection{Target Language}
 
-Our target language for this demonstration is a simple, typed expression
-language as follows:
+Our target language for this demonstration is the simple, typed expression
+language presented in Figure \ref{lang}\footnote{We do not use the usual
+dependently-typed technique of parameterizing \texttt{Exp} with its type, as it
+would trivialize the \texttt{typeof} function}.
 
-\begin{lstlisting}
+\begin{figure}[htbp]
+  \begin{lstlisting}[basicstyle=\small\ttfamily]
   data Exp : Steppable $\rightarrow$ Set where
     boolVal : Bool $\rightarrow$ Exp Value
     intVal : $\N \rightarrow$ Exp Value
     add : Exp $S \rightarrow$ Exp Steps
     if_ : Exp $S_n \rightarrow$ Exp $S_1 \rightarrow$ Exp $S_2 \rightarrow$ Exp Steps
-\end{lstlisting}
-
-with the following typing rules (in Agda):
-
-\begin{lstlisting}
-  data $\vdash$\_:\_ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
+    
+  data $\vdash$_:_ : Exp $S$ $\rightarrow$ Type $\rightarrow$ Set where
     typ-bool : $\vdash$(boolVal b):Bool
     typ-nat : $\vdash$(intVal i):$\N$
     typ-add : $\vdash e_1:\N \rightarrow \vdash e_2:\N \rightarrow \vdash (\texttt{add}\ e_1\ e_2):\N$
     typ-if : $\vdash e:\texttt{Bool} \rightarrow \vdash e_1:\tau \rightarrow \vdash e_2:\tau \rightarrow \vdash (\texttt{if}\ e\ e_1\ e_2):\tau$
-\end{lstlisting}
+  \end{lstlisting}
+  \caption{Target language and typing rules}
+  \label{lang}
+\end{figure}
 
-where $\N$ represents Agda's usual type of natural numbers.
-
-We don't use the usual dependently-typed trick of parameterizing
-\texttt{Exp} with its type, as it would trivialize the \texttt{typeof}
-function, breaking the trick.
-
-Speaking of, the implementation of \texttt{typeof}:\footnote{The actual
-implementation in Agda is somewhat more complex, and is simplified for
-presentation. Agda does not support Haskell-style \texttt{case} expressions,
-nor can it, in general, decide equality or inequality of \texttt{Set}s.
-Instead, we use the usual \texttt{fold} operator over the \texttt{Maybe}
-type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
-
-\begin{lstlisting}
-  typeof (boolVal _) = Bool
-  typeof (intVal _) = $\N$
+\begin{figure}[htbp]
+  \begin{lstlisting}[basicstyle=\small\ttfamily]
   typeof (add $e_1$ $e_2$) =
     case (typeof $e_1$, typeof $e_2$)
       of (Just $\N$, Just $\N$) -> Just $\N$
@@ -265,9 +259,19 @@ type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
              then Just $\tau_1$
              else Nothing
        | _ -> Nothing
-\end{lstlisting}
+  \end{lstlisting}
+  \caption{Definition of \texttt{typeof}, selected cases
+    \protect\footnotemark}\label{def:typeof}
+\end{figure}
 
-We are ready to proceed. Our goal is to define the function \texttt{step}
+\footnotetext{The actual
+implementation in Agda is somewhat more complex, and is simplified for
+presentation. Agda does not support Haskell-style \texttt{case} expressions,
+nor can it, in general, decide equality or inequality of \texttt{Set}s.
+Instead, we use the usual \texttt{fold} operator over the \texttt{Maybe}
+type and use a regular Agda variant to represent $\N$ and \texttt{Bool}.}
+
+Our goal is to define the function \texttt{step}
 satisfying equation \ref{eq:preservation}. As per Bahr and Hutton
 \cite{bahr:2015}, we will proceed by structural induction on $e$, evaluating
 the left hand side of equation \ref{eq:preservation} and seek to transform it
@@ -276,13 +280,15 @@ into an expression of the form $\texttt{typeof}\ c$, then take $\texttt{step e}
 
 \subsection{Semantics Calculation}
 
-Let $\vdash e : \tau$.
+Let $\vdash e : \tau$. For brevity, we show only two representative cases.
 
-For brevity, we show only two representative cases.
+\hfill
 
 \textbf{Case:} $e = \texttt{add}\ e_1\ e_2$, where $e_1 : \texttt{Exp CanStep}$
 
-We begin by applying the definition of \texttt{typeof}:
+\hfill
+
+We begin by applying the definition of \texttt{typeof} from Figure \ref{def:typeof}:
 
 \begin{lstlisting}
   typeof (add $e_1$ $e_2$)
@@ -315,12 +321,16 @@ namely, $c = \texttt{add}\ (\texttt{step}\ e_1)\ e_2$. We wrap up by defining
   step (add $e_1$ $e_2$) = add (step $e_1$) $e_2$
 \end{lstlisting}
 
-We note in passing that this construction forces a ``left-first'' evaluation
-strategy. If both $e_1$ and $e_2$ can be stepped, we have the choice of
-invoking the inductive hypothesis on $e_1$, $e_2$ or both, corresponding to
-left-first, right-first or parallel evaluation respectively.
+We note that this rule specifies ``left-first'' evaluation semantics. In fact,
+if both $e_1$ and $e_2$ can be stepped, we have the choice of invoking the
+inductive hypothesis on $e_1$, $e_2$ or both, corresponding to left-first,
+right-first or parallel evaluation respectively.
+
+\hfill
 
 \textbf{Case:} $e = \texttt{if\_}\ (\texttt{boolVal true})\ e_1\ e_2$
+
+\hfill
 
 As with before, we begin by expanding \texttt{typeof}:
 
@@ -366,7 +376,7 @@ to.
 \subsection{Implementation}
 
 The example language semantics, along with their proofs of correctness, have
-been fully mechanized in Agda, available at \texttt{https://github.com/CT075/calculated-semantics}.
+been fully mechanised in Agda, available at \texttt{https://github.com/CT075/calculated-semantics}.
 This includes the unsimplified \texttt{step} fully witnessing progress and a
 proof that the \texttt{typeof} function respects the static typing rules.
 
